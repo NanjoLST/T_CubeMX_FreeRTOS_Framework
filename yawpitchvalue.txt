@@ -1,0 +1,26 @@
+yaw
+3100 1125 0 8100+(8191)
+3100 1125 7175(-1016)
+  1975  2141 
+pitch
+1450 710 70
+
+mx max = 157 | min = -233 -38
+my max = 152 | min = -357 -102.5
+mz max = 163 | min = -194 -15.5
+
+pitch:
+pitchRealAngle
+	up + down -
+gYroY 
+	up - down +
+pitchI
+	up - down +
+	
+yaw:
+yawRealAngle
+	cw - ccw +
+gYroZ
+	cw + ccw -
+yawI
+	cw - ccw +

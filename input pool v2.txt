@@ -1,0 +1,76 @@
+#include <stdint.h>
+#include "can.h"
+extern void ErrorHandler();
+
+#define READPOOLSIZE 6
+#define ID0 0x201u
+#define ID1 0x202u
+#define ID2 0x203u
+#define ID3 0x204u
+#define ID4 0x205u
+#define ID5 0x206u
+typedef uint16_t Id_t;
+
+typedef CanRxMsgTypeDef Data_t;//struct{uint8_t ch[DATASIZE];}
+
+typedef uint8_t DataIndex_t;
+typedef uint8_t ReadPoolIndex_t;
+typedef enum{Empty, NextRead, Locked} ExchangeStatus_t;
+
+typedef struct {
+	DataIndex_t forRead;
+	ExchangeStatus_t exchangeStatus;
+	DataIndex_t forExchange;
+}ReadPool_t;
+
+struct {
+	Data_t data[READPOOLSIZE * 2 + 1];
+	ReadPool_t readPool[READPOOLSIZE];
+	DataIndex_t forWrite;
+}inputPool;
+
+extern const uint16_t readPoolMap[READPOOLSIZE]; 
+const uint16_t readPoolMap[READPOOLSIZE]
+	= {ID0, ID1};
+
+ReadPoolIndex_t getReadPoolIndex(Id_t id){
+	ReadPoolIndex_t i;
+	for(i = 0; i != READPOOLSIZE; ++i){
+		if(readPoolMap[i] == id){
+			return i;
+		}
+	}
+	ErrorHandler();
+	return i;
+}
+
+#define getId(data) (data.StdId)
+
+#define InputPool_pGetWriteData(inputPool) \
+	(inputPool.data + inputPool.forWrite)
+
+#define InputPool_pGetReadData(inputPool, id) \
+	(inputPool.data + inputPool.readPool[getReadPoolIndex(id)].forRead)
+
+#define InputPool_hasNextRead(inputPool, id) \
+	(inputPool.readPool[getReadPoolIndex(id)].exchangeStatus == NextRead)
+
+#define getNextRead(inputPool, id) { \
+	ReadPool_t *readPool = inputPool.readPool + getReadPoolIndex(id); \
+	readPool->exchangeStatus = Locked; \
+	DataIndex_t temp = readPool->forRead; \
+	readPool->forRead = readPool->forExchange; \
+	readPool->forExchange = temp; \
+	readPool->exchangeStatus = Empty; \
+}
+
+#define getNextWrite(inputPool) { \
+	ReadPool_t *readPool = inputPool.readPool \
+		+ getReadPoolIndex(getId(inputPool.data[forWrite])); \
+	if(readPool->exchangeStatus != Locked){ \
+		DataIndex_t temp = readPool->forWrite; \
+		readPool->forWrite = readPool->forExchange; \
+		readPool->forExchange = temp; \
+		readPool->exchangeStatus = NextRead; \
+	} \
+}

@@ -1,0 +1,46 @@
+
+typedef enum{empty, nextRead, locked} ExchangeBuffStatus_t;
+
+#define InputPoolDef(dataSize) \
+struct{ \
+	struct{ \
+		uint8_t data[dataSize]; \
+	}buff[3]; \
+	uint8_t buffForWrite; \
+	uint8_t buffForRead; \
+	uint8_t buffForExchange; \
+	ExchangeBuffStatus_t exchangeBuffStatus; \
+}
+
+#define InputPool_getWriteData(inputPool) \
+inputPool.buff[inputPool.buffForWrite].data
+
+#define InputPool_getReadData(inputPool) \
+inputPool.buff[inputPool.buffForRead].data
+
+#define InputPool_hasNextRead(inputPool) \
+(inputPool.exchangeBuffStatus == nextRead)
+
+#define InputPool_isLocked(inputPool) \
+(inputPool.exchangeBuffStatus == locked)
+
+#define InputPool_getNextRead(inputPool) \
+{ \
+	inputPool.exchangeBuffStatus = locked; \
+	uint8_t temp = inputPool.buffForRead; \
+	inputPool.buffForRead = inputPool.buffForExchange; \
+	inputPool.buffForExchange = temp; \
+	inputPool.exchangeBuffStatus = empty; \
+}
+
+#define InputPool_getNextWrite(inputPool) \
+{ \
+	if(inputPool.exchangeBuffStatus != locked){ \
+		uint8_t temp = inputPool.buffForWrite; \
+		inputPool.buffForWrite = inputPool.buffForExchange; \
+		inputPool.buffForExchange = temp; \
+		inputPool.exchangeBuffStatus = nextRead; \
+	} \
+}
+
+#define InputPoolInit() {{{0}}, 0, 1, 2, empty}
