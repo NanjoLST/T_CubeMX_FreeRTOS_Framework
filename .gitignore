@@ -1,0 +1,6 @@
+#备份文件
+*.zip
+
+#MDK临时文件
+MDK-ARM/T_CubeMX_FreeRTOS_Framework.uvguix.*
+MDK-ARM/T_CubeMX_FreeRTOS_Framework/
